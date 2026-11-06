@@ -23,6 +23,11 @@ def main():
             mix.mix(str(d / 'voice.mp3'), timing, str(d / 'mix.wav'))
             say(f'ролик {i}: картинки в Kling'); 
             for k, p in v['image_prompts'].items(): images.generate(p, d / 'img' / f'news_{k}.jpg')
+            have = set(v['image_prompts']); last = next(iter(have), None)
+            for sc in v['scenes']:   # сцена без своей картинки → берём предыдущую, чтобы не было чёрного кадра
+                if sc.get('img') and sc['img'] != 'ANCHOR':
+                    if sc['img'] in have: last = sc['img']
+                    elif last: sc['img'] = last
             spec = {'right': datetime.date.today().strftime('%b %-d').upper(), 'ticker': v['ticker'], 'scenes': v['scenes'], 'ad': v.get('ad')}
             json.dump(spec, open(d / 'spec.json', 'w'), ensure_ascii=False)
             say(f'ролик {i}: монтаж')
