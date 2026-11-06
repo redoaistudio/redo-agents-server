@@ -6,6 +6,9 @@ const W = path.resolve(process.argv[2]); const R = __dirname;
   // сцена без своей картинки → предыдущая картинка (иначе чёрный кадр); старые news_* от прошлых роликов убираем
   const has = (k) => fs.existsSync(W + '/img/news_' + k + '.jpg'); let last = null;
   for (const sc of spec.scenes) { if (!sc.img || sc.img === 'ANCHOR') continue; if (has(sc.img)) last = sc.img; else if (last) { console.log('нет картинки', sc.img, '→', last); sc.img = last; } }
+  // сцена-хук должна быть с картинкой новости, не ANCHOR (иначе после заставки чёрный кадр)
+  const firstImg = (spec.scenes.find((x) => x.img && x.img !== 'ANCHOR' && has(x.img)) || {}).img;
+  for (const sc of spec.scenes) if (sc.hook && (!sc.img || sc.img === 'ANCHOR' || !has(sc.img)) && firstImg) { console.log('хук без картинки →', firstImg); sc.img = firstImg; }
   for (const f of fs.readdirSync(R + '/img')) if (f.startsWith('news_')) fs.unlinkSync(R + '/img/' + f);
   fs.writeFileSync(R + '/spec.js', 'window.__SPEC=' + JSON.stringify(spec) + ';');
   for (const f of fs.readdirSync(W + '/img')) fs.copyFileSync(W + '/img/' + f, R + '/img/' + f);

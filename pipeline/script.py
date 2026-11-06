@@ -22,7 +22,7 @@ SCHEMA = '''Верни ТОЛЬКО JSON без пояснений:
  "format":"из Словаря","hook":"из Словаря","topic":"из Словаря",
  "disputed": false
 }]}
-Число scenes = числу segs; первая сцена с hook; 1–2 сцены ANCHOR; ссылки на продукт не нужны.'''
+Число scenes = числу segs; первая сцена с hook и ОБЯЗАТЕЛЬНО со своей картинкой s1 (не ANCHOR), у каждой не-ANCHOR сцены есть свой ключ в image_prompts; 1–2 сцены ANCHOR; ссылки на продукт не нужны.'''
 
 def write_scripts(n=3, avoid=(), recent_formats=()):
     c = anthropic.Anthropic(api_key=env('ANTHROPIC_API_KEY', required=True))
