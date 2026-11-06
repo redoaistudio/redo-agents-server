@@ -1,6 +1,6 @@
 # REDO агенты на сервере (пилот: AI News)
 
-Без браузера и без ноутбука: темы и сценарии — Claude по API с веб-поиском, голос — ElevenLabs API, картинки — Kling API, сборка — тот же рендерер, что сейчас (Chromium без окна + ffmpeg), загрузка — YouTube Data API, запись — Sheets API. Проверок «я не робот» нет: везде официальные API.
+Без браузера и без ноутбука: темы и сценарии — Claude по API с веб-поиском, голос — ElevenLabs API, картинки — fal.ai (Seedream 4.5, та же модель, что в Higgsfield), сборка — тот же рендерер, что сейчас (Chromium без окна + ffmpeg), загрузка — YouTube Data API, запись — Sheets API. Проверок «я не робот» нет: везде официальные API.
 
 ## Как устроено
 `pipeline/run.py` (каждый день 08:31 МСК, systemd-таймер):
@@ -14,7 +14,8 @@
 |---|---|
 | ANTHROPIC_API_KEY | console.anthropic.com → API keys |
 | ELEVENLABS_API_KEY | elevenlabs.io → Profile → API keys |
-| KLING_ACCESS_KEY, KLING_SECRET_KEY | app.klingai.com → Developer / API → API keys (нужен пакет API-кредитов) |
+| FAL_KEY | fal.ai → Dashboard → Keys (пополнение от $10, списание за картинку ~$0,04) |
+| KLING_ACCESS_KEY, KLING_SECRET_KEY | необязательно: запасной вариант, нужен пакет API-кредитов |
 | YT_CLIENT_ID, YT_CLIENT_SECRET | Google Cloud, проект redo-dashboard → OAuth-клиент типа Desktop |
 | YT_REFRESH_TOKEN | `python3 setup/youtube_token.py <id> <secret>` на Маке, вход под каналом AI News |
 | GOOGLE_SERVICE_ACCOUNT_JSON | ключ робота dashboard-reader (у папки таблиц право «Редактор») |
@@ -23,7 +24,7 @@
 `sudo bash deploy/setup.sh` на Ubuntu 24.04 → вписать ключи → проверка без загрузки: `python -m pipeline.run --n 1 --dry`.
 
 ## Стоимость (оценка на 90 роликов в месяц)
-Kling ~$14, ElevenLabs ~$22 (тариф Creator), Claude API ~$20–45, VPS ~$8–10 → ~$65–90 в месяц.
+картинки ~$18 (450 шт × $0,04), ElevenLabs ~$22 (тариф Creator), Claude API ~$20–45, VPS ~$8–10 → ~$70–95 в месяц.
 
 ## Ограничения
 - YouTube API: ~6 загрузок в день на проект Google (квота 10 000 единиц) — для 3 роликов AI News хватает.
