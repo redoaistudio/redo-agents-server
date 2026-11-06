@@ -9,9 +9,12 @@ echo "  … пересобираю: $D"
 sudo -u redo node render/render.js "$D" || exit 1
 sudo -E -u redo .venv/bin/python - "$D" <<'PY'
 import json, sys
-from pipeline import youtube, sheets
+from pipeline import youtube, sheets, qa
 import datetime
 d = sys.argv[1]; v = json.load(open(d + '/script.json'))
+dark = qa.dark_seconds(d + '/video.mp4')
+if dark: sys.exit(f'  СТОП: чёрные кадры на секундах {dark[:8]}, не загружаю')
+print('  проверка: чёрных кадров нет')
 vid, url = youtube.upload(d + '/video.mp4', v['title'], v['description'], ['ai', 'ainews'], 'public')
 print('  ГОТОВО, новый ролик:', url)
 try:

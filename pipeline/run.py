@@ -2,7 +2,7 @@
 python -m pipeline.run [--n 3] [--dry]   (--dry: всё, кроме загрузки и записи в таблицу)"""
 import argparse, datetime, json, pathlib, subprocess, traceback
 from .config import WORK, ROOT
-from . import script, voice, images, mix, youtube, sheets
+from . import script, voice, images, mix, youtube, sheets, qa
 
 def main():
     ap = argparse.ArgumentParser(); ap.add_argument('--n', type=int, default=3); ap.add_argument('--dry', action='store_true'); a = ap.parse_args()
@@ -36,6 +36,8 @@ def main():
             json.dump(spec, open(d / 'spec.json', 'w'), ensure_ascii=False)
             say(f'ролик {i}: монтаж')
             subprocess.run(['node', str(ROOT / 'render' / 'render.js'), str(d)], check=True)
+            dark = qa.dark_seconds(str(d / 'video.mp4'))
+            if dark: raise RuntimeError(f'чёрные кадры на секундах {dark[:6]} — не загружаю')
             line = f"{i}. {v['story']} — голос {chars} симв., картинок {len(v['image_prompts'])}"
             if a.dry: rep.append(line + ' — DRY, не загружено'); ok += 1; continue
             privacy = 'private' if v.get('disputed') else 'public'
