@@ -4,3 +4,4 @@ render/spec.js
 render/img/news_*
 *.env
 __pycache__/
+.logtoken

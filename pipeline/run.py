@@ -36,7 +36,7 @@ def main():
             if a.dry: rep.append(line + ' — DRY, не загружено'); ok += 1; continue
             privacy = 'private' if v.get('disputed') else 'public'
             vid, url = youtube.upload(str(d / 'video.mp4'), v['title'], v['description'], ['ai', 'ainews'], privacy)
-            try: sheets.append_results([[day, 'AI News', vid, url, '', v.get('format', ''), v.get('hook', ''), v.get('topic', ''), '', '', '', '', '', '', '', 'сервер; ' + v['story'], 'YouTube']])
+            try: j, r = sheets.rows_for(day, i, v, chars, vid, url, privacy); sheets.log([j], [r])
             except Exception as e: rep.append(f'   (таблица не записана: {e})')
             rep.append(f'{line} — {privacy}: {url}'); ok += 1
         except Exception as e:
