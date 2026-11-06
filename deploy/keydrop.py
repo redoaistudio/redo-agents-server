@@ -42,7 +42,14 @@ for _ in range(360):
     ak = key.decrypt(base64.b64decode(box["k"]), padding.OAEP(mgf=padding.MGF1(hashes.SHA256()), algorithm=hashes.SHA256(), label=None))
     keys = json.loads(AESGCM(ak).decrypt(base64.b64decode(box["iv"]), base64.b64decode(box["ct"]), None))
     keys = {k: v.strip().replace("\n", "") for k, v in keys.items() if k in ALLOWED and v.strip()}
+    for k in [k for k, v in keys.items() if any(c.isspace() for c in v)]:
+        print(f"  ✗ {k}: в значении пробелы, похоже, вставлено не то — пропускаю"); keys.pop(k)
+    if "YT_CLIENT_SECRET" in keys and not keys["YT_CLIENT_SECRET"].startswith("GOCSPX-"):
+        print("  ✗ YT_CLIENT_SECRET должен начинаться с GOCSPX- — пропускаю"); keys.pop("YT_CLIENT_SECRET")
+    if "YT_CLIENT_ID" in keys and not keys["YT_CLIENT_ID"].endswith(".apps.googleusercontent.com"):
+        print("  ✗ YT_CLIENT_ID не похож на Client ID — пропускаю"); keys.pop("YT_CLIENT_ID")
     lines = open(ENV).read().splitlines() if os.path.exists(ENV) else []
+    lines = [l.split("=", 1)[0] + "=" if "=" in l and not l.startswith("#") and any(c.isspace() for c in l.split("=", 1)[1].strip()) and not l.startswith("GOOGLE_SERVICE_ACCOUNT_JSON") else l for l in lines]
     code = keys.pop("YT_AUTH_CODE", None)
     if code:   # обменять одноразовый код YouTube на постоянный (refresh) токен
         cur = dict(l.split("=", 1) for l in lines if "=" in l and not l.startswith("#"))
