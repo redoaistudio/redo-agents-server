@@ -29,10 +29,26 @@ def write_scripts(n=3, avoid=()):
     today = datetime.date.today().isoformat()
     msg = (f'Сегодня {today}. Найди {n} свежие (за 48 часов) и проверяемые новости про ИИ для канала AI News и напиши сценарии.\n'
            f'Уже были (не повторять): {", ".join(avoid) or "—"}.\n\nПРАВИЛА КАНАЛА:\n{RULES}\n\n{SCHEMA}')
-    r = c.messages.create(model=ANTHROPIC_MODEL, max_tokens=16000,
-                          tools=[{'type': 'web_search_20250305', 'name': 'web_search', 'max_uses': 12}],
-                          messages=[{'role': 'user', 'content': msg}])
-    text = ''.join(b.text for b in r.content if getattr(b, 'type', '') == 'text')
-    m = re.search(r'\{[\s\S]*\}\s*$', text.strip())
-    data = json.loads(m.group(0) if m else text)
-    return data['videos'], r.usage
+    msgs = [{'role': 'user', 'content': msg}]
+    tools = [{'type': 'web_search_20250305', 'name': 'web_search', 'max_uses': 12}]
+    usage_in = usage_out = 0
+    for attempt in range(6):
+        r = c.messages.create(model=ANTHROPIC_MODEL, max_tokens=16000, tools=tools, messages=msgs)
+        usage_in += r.usage.input_tokens; usage_out += r.usage.output_tokens
+        if r.stop_reason == 'pause_turn':   # долгий веб-поиск: продолжить с того же места
+            msgs = msgs + [{'role': 'assistant', 'content': r.content}]; continue
+        text = ''.join(b.text for b in r.content if getattr(b, 'type', '') == 'text')
+        data = _parse(text)
+        if data and data.get('videos'):
+            return data['videos'], type('U', (), {'input_tokens': usage_in, 'output_tokens': usage_out})()
+        (ROOT / 'reports').mkdir(exist_ok=True); (ROOT / 'reports' / 'last_claude_raw.txt').write_text(text, encoding='utf-8')
+        msgs = msgs + [{'role': 'assistant', 'content': r.content},
+                       {'role': 'user', 'content': 'Верни сейчас ТОЛЬКО итоговый JSON по схеме, без текста до и после.'}]
+    raise RuntimeError('Claude не вернул JSON (см. reports/last_claude_raw.txt)')
+
+def _parse(text):
+    t = re.sub(r'```(?:json)?', '', text or '')
+    a, b = t.find('{'), t.rfind('}')
+    if a < 0 or b <= a: return None
+    try: return json.loads(t[a:b + 1])
+    except json.JSONDecodeError: return None
