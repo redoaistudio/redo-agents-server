@@ -1,7 +1,7 @@
 """Один раз: получить refresh token для загрузки на канал AI News.
 Запуск на Маке: python3 youtube_token.py <CLIENT_ID> <CLIENT_SECRET>
 Откроется браузер: выбрать аккаунт tukzhanovazhanna@gmail.com и канал AI News, нажать «Разрешить».
-Токен запишется в файл yt_refresh_token.txt рядом — его содержимое Жанна сама вставляет в настройки сервера (YT_REFRESH_TOKEN), потом файл удаляет."""
+Токен запишется в файл yt_refresh_token.txt рядом — его содержимое Jay сама вставляет в настройки сервера (YT_REFRESH_TOKEN), потом файл удаляет."""
 import sys, http.server, urllib.parse, webbrowser, json, urllib.request, pathlib
 cid, secret = sys.argv[1], sys.argv[2]; port = 8765; redirect = f'http://localhost:{port}/'
 url = 'https://accounts.google.com/o/oauth2/v2/auth?' + urllib.parse.urlencode({'client_id': cid, 'redirect_uri': redirect, 'response_type': 'code',
