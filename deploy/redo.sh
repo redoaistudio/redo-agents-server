@@ -3,6 +3,7 @@
 cd /opt/redo-agents-server
 if [ -z "$REDO_PULLED" ]; then sudo -u redo git pull -q; REDO_PULLED=1 exec bash "$0"; fi
 set -a; . /etc/redo/agents.env; set +a
+cp deploy/redo-ainews.service deploy/redo-ainews.timer /etc/systemd/system/ && systemctl daemon-reload && systemctl enable redo-ainews.timer >/dev/null 2>&1 && echo "  расписание обновлено: $(systemctl list-timers redo-ainews.timer --no-pager | sed -n 2p | cut -c1-40)"
 D=$(dirname "$(ls -t work/*/*/spec.json | head -1)")
 echo "  … пересобираю: $D"
 sudo -u redo node render/render.js "$D" || exit 1
