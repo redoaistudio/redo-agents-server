@@ -1,19 +1,47 @@
 #cloud-config
 # Вставляется в поле «Cloud config» при создании сервера Hetzner. Ставит всё само при первом запуске.
+# Репозиторий закрытый: сервер создаёт себе ключ только для чтения и присылает его публичную часть
+# на сайт дашборда; после того как ключ добавят в GitHub (Deploy keys), сервер сам скачает код и установится.
 package_update: true
 packages: [git, python3-pip, python3-venv, ffmpeg, fonts-inter, fonts-dejavu-core, curl, ufw, unattended-upgrades]
 users:
   - default
   - name: redo
     shell: /bin/bash
+write_files:
+  - path: /usr/local/bin/redo-bootstrap.sh
+    permissions: '0755'
+    content: |
+      #!/bin/bash
+      # Повторяется каждую минуту, пока не получится скачать код (ждёт, когда ключ добавят в GitHub).
+      set -e
+      [ -f /opt/redo-agents-server/.installed ] && exit 0
+      sudo -u redo bash -c 'ssh-keyscan -t ed25519 github.com >> ~/.ssh/known_hosts 2>/dev/null; cd /opt && git clone -q git@github.com:redoaistudio/redo-agents-server.git' || { echo "ждём ключ в GitHub"; exit 1; }
+      cd /opt/redo-agents-server
+      sudo -u redo bash -c 'python3 -m venv .venv && .venv/bin/pip install -q -r requirements.txt && cd render && npm init -y >/dev/null && npm i -q playwright@1.48.2 && npx -y playwright@1.48.2 install chromium'
+      cd render && npx -y playwright@1.48.2 install-deps chromium
+      mkdir -p /etc/redo && [ -f /etc/redo/agents.env ] || cp /opt/redo-agents-server/deploy/agents.env.example /etc/redo/agents.env
+      chmod 600 /etc/redo/agents.env && chown redo /etc/redo/agents.env
+      cp /opt/redo-agents-server/deploy/redo-ainews.service /opt/redo-agents-server/deploy/redo-ainews.timer /etc/systemd/system/ && systemctl daemon-reload
+      touch /opt/redo-agents-server/.installed
+      echo "REDO: код установлен $(date). Осталось вписать ключи в /etc/redo/agents.env" > /etc/motd
+  - path: /etc/systemd/system/redo-bootstrap.service
+    content: |
+      [Unit]
+      Description=REDO: скачать код и установить
+      After=network-online.target
+      [Service]
+      Type=oneshot
+      ExecStart=/usr/local/bin/redo-bootstrap.sh
+      Restart=on-failure
+      RestartSec=60
+      [Install]
+      WantedBy=multi-user.target
 runcmd:
   - ufw default deny incoming && ufw allow OpenSSH && ufw --force enable
   - sed -i 's/^#\?PasswordAuthentication .*/PasswordAuthentication no/' /etc/ssh/sshd_config && systemctl restart ssh
   - curl -fsSL https://deb.nodesource.com/setup_22.x | bash - && apt-get install -y nodejs
-  - git clone https://github.com/redoaistudio/redo-agents-server.git /opt/redo-agents-server
-  - chown -R redo:redo /opt/redo-agents-server
-  - sudo -u redo bash -c 'cd /opt/redo-agents-server && python3 -m venv .venv && .venv/bin/pip install -q -r requirements.txt && cd render && npm init -y >/dev/null && npm i -q playwright@1.48.2'
-  - cd /opt/redo-agents-server/render && npx -y playwright@1.48.2 install-deps chromium && sudo -u redo npx -y playwright@1.48.2 install chromium
-  - mkdir -p /etc/redo && cp /opt/redo-agents-server/deploy/agents.env.example /etc/redo/agents.env && chmod 600 /etc/redo/agents.env && chown redo /etc/redo/agents.env
-  - cp /opt/redo-agents-server/deploy/redo-ainews.service /opt/redo-agents-server/deploy/redo-ainews.timer /etc/systemd/system/ && systemctl daemon-reload
-  - echo "REDO: установка завершена $(date)" > /etc/motd
+  - mkdir -p /opt && chown redo:redo /opt
+  - sudo -u redo bash -c 'mkdir -p ~/.ssh && ssh-keygen -q -t ed25519 -N "" -C "redo-server@$(hostname)" -f ~/.ssh/id_ed25519'
+  - curl -fsS -X POST --data-binary @/home/redo/.ssh/id_ed25519.pub https://redo-agents-dashboard.vercel.app/api/deploykey
+  - systemctl daemon-reload && systemctl enable --now redo-bootstrap.service
