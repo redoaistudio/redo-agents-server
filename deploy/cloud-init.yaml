@@ -1,0 +1,19 @@
+#cloud-config
+# Вставляется в поле «Cloud config» при создании сервера Hetzner. Ставит всё само при первом запуске.
+package_update: true
+packages: [git, python3-pip, python3-venv, ffmpeg, fonts-inter, fonts-dejavu-core, curl, ufw, unattended-upgrades]
+users:
+  - default
+  - name: redo
+    shell: /bin/bash
+runcmd:
+  - ufw default deny incoming && ufw allow OpenSSH && ufw --force enable
+  - sed -i 's/^#\?PasswordAuthentication .*/PasswordAuthentication no/' /etc/ssh/sshd_config && systemctl restart ssh
+  - curl -fsSL https://deb.nodesource.com/setup_22.x | bash - && apt-get install -y nodejs
+  - git clone https://github.com/redoaistudio/redo-agents-server.git /opt/redo-agents-server
+  - chown -R redo:redo /opt/redo-agents-server
+  - sudo -u redo bash -c 'cd /opt/redo-agents-server && python3 -m venv .venv && .venv/bin/pip install -q -r requirements.txt && cd render && npm init -y >/dev/null && npm i -q playwright@1.48.2'
+  - cd /opt/redo-agents-server/render && npx -y playwright@1.48.2 install-deps chromium && sudo -u redo npx -y playwright@1.48.2 install chromium
+  - mkdir -p /etc/redo && cp /opt/redo-agents-server/deploy/agents.env.example /etc/redo/agents.env && chmod 600 /etc/redo/agents.env && chown redo /etc/redo/agents.env
+  - cp /opt/redo-agents-server/deploy/redo-ainews.service /opt/redo-agents-server/deploy/redo-ainews.timer /etc/systemd/system/ && systemctl daemon-reload
+  - echo "REDO: установка завершена $(date)" > /etc/motd
