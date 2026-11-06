@@ -1,0 +1,7 @@
+[Unit]
+Description=AI News каждый день в 08:31 МСК
+[Timer]
+OnCalendar=*-*-* 05:31:00 UTC
+Persistent=true
+[Install]
+WantedBy=timers.target

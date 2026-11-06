@@ -1,0 +1,6 @@
+work/
+reports/
+render/spec.js
+render/img/news_*
+*.env
+__pycache__/

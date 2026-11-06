@@ -1,0 +1,9 @@
+[Unit]
+Description=REDO AI News: 3 ролика в день (сервер)
+[Service]
+Type=oneshot
+User=redo
+WorkingDirectory=/opt/redo-agents-server
+EnvironmentFile=/etc/redo/agents.env
+ExecStart=/opt/redo-agents-server/.venv/bin/python -m pipeline.run --n 3
+TimeoutStartSec=3h
