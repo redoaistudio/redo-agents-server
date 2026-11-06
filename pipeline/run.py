@@ -9,6 +9,8 @@ def main():
     day = datetime.date.today().isoformat(); out = WORK / day; out.mkdir(parents=True, exist_ok=True)
     rep = [f'# AI News (сервер) — {day}', '']
     done_slugs = [p.name for p in WORK.glob('*/*') if p.is_dir()]
+    say = lambda m: print('  …', m, flush=True)
+    say('Claude ищет новости и пишет сценарии (2–5 мин)')
     vids, usage = script.write_scripts(a.n, done_slugs[-30:])
     rep.append(f'Claude: вход {usage.input_tokens}, выход {usage.output_tokens} токенов')
     ok = 0
@@ -16,11 +18,14 @@ def main():
         d = out / f"{i}_{v['slug']}"; (d / 'img').mkdir(parents=True, exist_ok=True)
         try:
             json.dump(v, open(d / 'script.json', 'w'), ensure_ascii=False, indent=1)
+            say(f"ролик {i}: {v['story']} — озвучка")
             timing, chars = voice.tts(v['segs'], d / 'voice.mp3', d / 'timing.json')
             mix.mix(str(d / 'voice.mp3'), timing, str(d / 'mix.wav'))
+            say(f'ролик {i}: картинки в Kling'); 
             for k, p in v['image_prompts'].items(): images.generate(p, d / 'img' / f'news_{k}.jpg')
             spec = {'right': datetime.date.today().strftime('%b %-d').upper(), 'ticker': v['ticker'], 'scenes': v['scenes'], 'ad': v.get('ad')}
             json.dump(spec, open(d / 'spec.json', 'w'), ensure_ascii=False)
+            say(f'ролик {i}: монтаж')
             subprocess.run(['node', str(ROOT / 'render' / 'render.js'), str(d)], check=True)
             line = f"{i}. {v['story']} — голос {chars} симв., картинок {len(v['image_prompts'])}"
             if a.dry: rep.append(line + ' — DRY, не загружено'); ok += 1; continue
