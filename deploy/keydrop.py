@@ -8,7 +8,7 @@ from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 BASE = "https://redo-agents-dashboard.vercel.app/api/keydrop"
 ENV = "/etc/redo/agents.env"
 ALLOWED = {"ANTHROPIC_API_KEY", "ELEVENLABS_API_KEY", "KLING_API_KEY", "KLING_ACCESS_KEY", "KLING_SECRET_KEY",
-           "YT_CLIENT_ID", "YT_CLIENT_SECRET", "YT_REFRESH_TOKEN", "FAL_KEY"}
+           "YT_AUTH_CODE", "YT_CLIENT_ID", "YT_CLIENT_SECRET", "YT_REFRESH_TOKEN", "FAL_KEY"}
 
 def req(url, data=None):
     r = urllib.request.Request(url, data=json.dumps(data).encode() if data else None,
@@ -43,6 +43,20 @@ for _ in range(360):
     keys = json.loads(AESGCM(ak).decrypt(base64.b64decode(box["iv"]), base64.b64decode(box["ct"]), None))
     keys = {k: v.strip().replace("\n", "") for k, v in keys.items() if k in ALLOWED and v.strip()}
     lines = open(ENV).read().splitlines() if os.path.exists(ENV) else []
+    code = keys.pop("YT_AUTH_CODE", None)
+    if code:   # обменять одноразовый код YouTube на постоянный (refresh) токен
+        cur = dict(l.split("=", 1) for l in lines if "=" in l and not l.startswith("#"))
+        cid = keys.get("YT_CLIENT_ID") or cur.get("YT_CLIENT_ID"); sec = keys.get("YT_CLIENT_SECRET") or cur.get("YT_CLIENT_SECRET")
+        import urllib.parse
+        r = urllib.request.Request("https://oauth2.googleapis.com/token", data=urllib.parse.urlencode({
+            "code": code, "client_id": cid, "client_secret": sec, "grant_type": "authorization_code",
+            "redirect_uri": "https://redo-agents-dashboard.vercel.app/keys"}).encode())
+        try:
+            with urllib.request.urlopen(r, timeout=30) as f: tj = json.loads(f.read())
+            if tj.get("refresh_token"): keys["YT_REFRESH_TOKEN"] = tj["refresh_token"]; print("  YouTube: доступ получен ✓")
+            else: print("  YouTube: Google не выдал постоянный токен, нужно разрешить заново")
+        except urllib.error.HTTPError as e:
+            print("  YouTube: ошибка обмена кода:", json.loads(e.read() or b"{}").get("error_description") or e.code)
     done = set()
     for i, l in enumerate(lines):
         k = l.split("=", 1)[0]
