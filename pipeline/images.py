@@ -30,7 +30,8 @@ def _kling(prompt, out_jpg):
         tok = lambda: jwt.encode({'iss': ak, 'exp': int(time.time()) + 1800, 'nbf': int(time.time()) - 5}, sk, algorithm='HS256')
     r = requests.post(KLING_BASE + '/v1/images/generations', headers={'Authorization': 'Bearer ' + tok()},
                       json={'model_name': KLING_MODEL, 'prompt': prompt[:2400], 'aspect_ratio': '9:16', 'n': 1}, timeout=60)
-    r.raise_for_status(); tid = r.json()['data']['task_id']
+    if not r.ok: raise RuntimeError(f'Kling {r.status_code}: {r.text[:300]}')
+    tid = r.json()['data']['task_id']
     for _ in range(90):
         time.sleep(4)
         g = requests.get(f'{KLING_BASE}/v1/images/generations/{tid}', headers={'Authorization': 'Bearer ' + tok()}, timeout=30).json()['data']
