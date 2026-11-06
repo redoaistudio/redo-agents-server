@@ -11,7 +11,11 @@ def main():
     done_slugs = [p.name for p in WORK.glob('*/*') if p.is_dir()]
     say = lambda m: print('  …', m, flush=True)
     say('Claude ищет новости и пишет сценарии (2–5 мин)')
-    vids, usage = script.write_scripts(a.n, done_slugs[-30:])
+    recent = []
+    for f in sorted(WORK.glob('*/*/script.json'))[-9:]:
+        try: recent.append(json.load(open(f)).get('format', ''))
+        except Exception: pass
+    vids, usage = script.write_scripts(a.n, done_slugs[-30:], [x for x in recent if x])
     rep.append(f'Claude: вход {usage.input_tokens}, выход {usage.output_tokens} токенов')
     ok = 0
     for i, v in enumerate(vids, 1):

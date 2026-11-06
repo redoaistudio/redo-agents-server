@@ -24,11 +24,11 @@ SCHEMA = '''Верни ТОЛЬКО JSON без пояснений:
 }]}
 Число scenes = числу segs; первая сцена с hook; 1–2 сцены ANCHOR; ссылки на продукт не нужны.'''
 
-def write_scripts(n=3, avoid=()):
+def write_scripts(n=3, avoid=(), recent_formats=()):
     c = anthropic.Anthropic(api_key=env('ANTHROPIC_API_KEY', required=True))
     today = datetime.date.today().isoformat()
     msg = (f'Сегодня {today}. Найди {n} свежие (за 48 часов) и проверяемые новости про ИИ для канала AI News и напиши сценарии.\n'
-           f'Уже были (не повторять): {", ".join(avoid) or "—"}.\n\nПРАВИЛА КАНАЛА:\n{RULES}\n\n{SCHEMA}')
+           f'Уже были (не повторять): {", ".join(avoid) or "—"}.\nФорматы прошлых запусков (последние): {", ".join(recent_formats) or "—"}.\n\nПРАВИЛА КАНАЛА:\n{RULES}\n\n{SCHEMA}')
     msgs = [{'role': 'user', 'content': msg}]
     tools = [{'type': 'web_search_20250305', 'name': 'web_search', 'max_uses': 12}]
     usage_in = usage_out = 0
