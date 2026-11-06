@@ -3,6 +3,10 @@ const { chromium } = require('playwright'); const fs = require('fs'); const path
 const W = path.resolve(process.argv[2]); const R = __dirname;
 (async () => { try {
   const spec = JSON.parse(fs.readFileSync(W + '/spec.json')); const timing = JSON.parse(fs.readFileSync(W + '/timing.json'));
+  // сцена без своей картинки → предыдущая картинка (иначе чёрный кадр); старые news_* от прошлых роликов убираем
+  const has = (k) => fs.existsSync(W + '/img/news_' + k + '.jpg'); let last = null;
+  for (const sc of spec.scenes) { if (!sc.img || sc.img === 'ANCHOR') continue; if (has(sc.img)) last = sc.img; else if (last) { console.log('нет картинки', sc.img, '→', last); sc.img = last; } }
+  for (const f of fs.readdirSync(R + '/img')) if (f.startsWith('news_')) fs.unlinkSync(R + '/img/' + f);
   fs.writeFileSync(R + '/spec.js', 'window.__SPEC=' + JSON.stringify(spec) + ';');
   for (const f of fs.readdirSync(W + '/img')) fs.copyFileSync(W + '/img/' + f, R + '/img/' + f);
   const b = await chromium.launch({ args: ['--allow-file-access-from-files', '--disable-web-security'] });
