@@ -21,7 +21,7 @@ def _fal(prompt, out_jpg):
     return _save(requests.get(url, timeout=60).content, out_jpg)
 
 def _kling(prompt, out_jpg):
-    api_key = env('KLING_API_KEY')
+    api_key = env('KLING_API_KEY') or (env('KLING_ACCESS_KEY') if not env('KLING_SECRET_KEY') else None)
     if api_key:  # новый формат: один ключ, передаётся как Bearer
         tok = lambda: api_key
     else:        # старый формат: пара Access/Secret → JWT
