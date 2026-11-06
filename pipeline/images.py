@@ -21,9 +21,13 @@ def _fal(prompt, out_jpg):
     return _save(requests.get(url, timeout=60).content, out_jpg)
 
 def _kling(prompt, out_jpg):
-    import jwt
-    ak, sk = env('KLING_ACCESS_KEY', required=True), env('KLING_SECRET_KEY', required=True)
-    tok = lambda: jwt.encode({'iss': ak, 'exp': int(time.time()) + 1800, 'nbf': int(time.time()) - 5}, sk, algorithm='HS256')
+    api_key = env('KLING_API_KEY')
+    if api_key:  # новый формат: один ключ, передаётся как Bearer
+        tok = lambda: api_key
+    else:        # старый формат: пара Access/Secret → JWT
+        import jwt
+        ak, sk = env('KLING_ACCESS_KEY', required=True), env('KLING_SECRET_KEY', required=True)
+        tok = lambda: jwt.encode({'iss': ak, 'exp': int(time.time()) + 1800, 'nbf': int(time.time()) - 5}, sk, algorithm='HS256')
     r = requests.post(KLING_BASE + '/v1/images/generations', headers={'Authorization': 'Bearer ' + tok()},
                       json={'model_name': KLING_MODEL, 'prompt': prompt[:2400], 'aspect_ratio': '9:16', 'n': 1}, timeout=60)
     r.raise_for_status(); tid = r.json()['data']['task_id']

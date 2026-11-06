@@ -7,7 +7,7 @@ from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 
 BASE = "https://redo-agents-dashboard.vercel.app/api/keydrop"
 ENV = "/etc/redo/agents.env"
-ALLOWED = {"ANTHROPIC_API_KEY", "ELEVENLABS_API_KEY", "KLING_ACCESS_KEY", "KLING_SECRET_KEY",
+ALLOWED = {"ANTHROPIC_API_KEY", "ELEVENLABS_API_KEY", "KLING_API_KEY", "KLING_ACCESS_KEY", "KLING_SECRET_KEY",
            "YT_CLIENT_ID", "YT_CLIENT_SECRET", "YT_REFRESH_TOKEN", "FAL_KEY"}
 
 def req(url, data=None):
