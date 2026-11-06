@@ -35,4 +35,4 @@ def _kling(prompt, out_jpg):
     raise TimeoutError('Kling: картинка не готова за 6 минут')
 
 def generate(prompt, out_jpg):
-    return _kling(prompt, out_jpg) if env('IMAGE_PROVIDER', 'fal') == 'kling' else _fal(prompt, out_jpg)
+    return _kling(prompt, out_jpg) if env('IMAGE_PROVIDER', 'kling') == 'kling' else _fal(prompt, out_jpg)

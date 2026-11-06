@@ -1,6 +1,6 @@
 # REDO агенты на сервере (пилот: AI News)
 
-Без браузера и без ноутбука: темы и сценарии — Claude по API с веб-поиском, голос — ElevenLabs API, картинки — fal.ai (Seedream 4.5, та же модель, что в Higgsfield), сборка — тот же рендерер, что сейчас (Chromium без окна + ffmpeg), загрузка — YouTube Data API, запись — Sheets API. Проверок «я не робот» нет: везде официальные API.
+Без браузера и без ноутбука: темы и сценарии — Claude по API с веб-поиском, голос — ElevenLabs API, картинки — Kling API (оплачен 06.11; запасной вариант — fal.ai, IMAGE_PROVIDER=fal), сборка — тот же рендерер, что сейчас (Chromium без окна + ffmpeg), загрузка — YouTube Data API, запись — Sheets API. Проверок «я не робот» нет: везде официальные API.
 
 ## Как устроено
 `pipeline/run.py` (каждый день 08:31 МСК, systemd-таймер):
@@ -14,8 +14,8 @@
 |---|---|
 | ANTHROPIC_API_KEY | console.anthropic.com → API keys |
 | ELEVENLABS_API_KEY | elevenlabs.io → Profile → API keys |
-| FAL_KEY | fal.ai → Dashboard → Keys (пополнение от $10, списание за картинку ~$0,04) |
-| KLING_ACCESS_KEY, KLING_SECRET_KEY | необязательно: запасной вариант, нужен пакет API-кредитов |
+| KLING_ACCESS_KEY, KLING_SECRET_KEY | Kling → консоль разработчика → API keys (Access Key + Secret Key) |
+| FAL_KEY | необязательно: запасной вариант картинок |
 | YT_CLIENT_ID, YT_CLIENT_SECRET | Google Cloud, проект redo-dashboard → OAuth-клиент типа Desktop |
 | YT_REFRESH_TOKEN | `python3 setup/youtube_token.py <id> <secret>` на Маке, вход под каналом AI News |
 | GOOGLE_SERVICE_ACCOUNT_JSON | ключ робота dashboard-reader (у папки таблиц право «Редактор») |
